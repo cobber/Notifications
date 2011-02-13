@@ -1,0 +1,6 @@
+Revision history for Perl extension Global::Notifications.
+
+0.01  Sun Feb 13 01:25:36 2011
+	- original version; created by h2xs 1.23 with options
+		-AX --skip-exporter --use-new-tests -n Global::Notifications
+
