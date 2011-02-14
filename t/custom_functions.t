@@ -28,6 +28,15 @@ my @test_cases = (
                                 'functions' => [ qw( debug info notice warning error critical alert emergency surprise progress ) ],
                                 },
         },
+        { 
+            'test_line'   => __LINE__,
+            'description' => 'merge custom events with pre-defined events',
+            'package'     => 'SyslogMerge',
+            'use_args'    => [ qw( info :syslog alert ) ],
+            'expect'      => {
+                                'functions' => [ qw( debug info notice warning error critical alert emergency ) ],
+                                },
+        },
     );
 
 {
@@ -42,6 +51,7 @@ my @test_cases = (
                                     );
         ok( eval $eval_code, $description );   ## no critic (ProhibitStringyEval)
         can_ok( $test_package, @{$test_case->{expect}{functions}} );
+        can_ok( $test_package, map { "is_$_" } @{$test_case->{expect}{functions}} );
         }
 }
 

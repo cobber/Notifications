@@ -9,17 +9,19 @@ use Carp qw( croak carp );
 
 our $VERSION = '0.01';
 
-my $send_active_events = 1; # global on/off switch
-my %known_events       = ();       # which events are active / inactive
-my @observers          = ();       # ordered list of object references
-my $buffer             = undef;    # special observer for catching unobserved notifications - off by default
-my %tag                = (
-                            'default' => [qw( :typical )],
-                            'typical' => [qw( debug info warning error )],
-                            'syslog'  => [qw( debug info notice warning error critical alert emergency )],
-                            'carp'    => [qw( croak carp confess )],    # TODO: Riehm 2011-02-14 install carp observer automatically?
-                            # TODO: Riehm 2011-02-14 provide :admin to export add_observer, start/stop_all_events etc.?
-                            );
+my @observers   = ();        # ordered list of object references
+my $buffer      = undef;     # special observer for catching unobserved notifications - off by default
+my $can_send    = {
+                    active_events => 1,     # global on/off switch
+                    event         => {},    # on/off switch for individual events
+                    };
+my $tag         = {
+                    'default' => [qw( :typical )],
+                    'typical' => [qw( debug info warning error )],
+                    'syslog'  => [qw( debug info notice warning error critical alert emergency )],
+                    'carp'    => [qw( croak carp confess )],    # TODO: Riehm 2011-02-14 install carp observer automatically?
+                    # TODO: Riehm 2011-02-14 provide :admin to export add_observer, start/stop_all_events etc.?
+                    };
 
 ## @fn      import( <class>, @param )
 #  @brief   set up which functions should be visible to the caller
@@ -48,13 +50,13 @@ sub import
     my %export  = ();
     while( my $symbol = shift @symbols )
         {
-        $prefix   = shift @symbols                          if $symbol =~ /^[-_]prefix/i;
-        $suffix   = shift @symbols                          if $symbol =~ /^[-_]suffix/i;
-        $case     = lc( $1 )                                if $symbol =~ /^[-_](upper|lower)(case)?$/i;
-        $buffer   = undef                                   if $symbol =~ /^[-_]no[-_]?buffer$/i;
-        $buffer ||= Notifications::Buffer->new()            if $symbol =~ /^[-_]buffer$/i;
-        $send_active_events  = lc( $1 ) eq 'en' ? 1 : 0     if $symbol =~ /^[-_](en|dis)abled$/i;
-        push( @symbols, @{$tag{lc($1)}} )                   if $symbol =~ /^:(\w+)$/;
+        $prefix   = shift @symbols                              if $symbol =~ /^[-_]prefix/i;
+        $suffix   = shift @symbols                              if $symbol =~ /^[-_]suffix/i;
+        $case     = lc( $1 )                                    if $symbol =~ /^[-_](upper|lower)(case)?$/i;
+        $buffer   = undef                                       if $symbol =~ /^[-_]no[-_]?buffer$/i;
+        $buffer ||= Notifications::Buffer->new()                if $symbol =~ /^[-_]buffer$/i;
+        $can_send->{active_events} = lc( $1 ) eq 'en' ? 1 : 0   if $symbol =~ /^[-_](en|dis)abled$/i;
+        push( @symbols, @{$tag->{lc($1)}} )                     if $symbol =~ /^:(\w+)$/;
         next unless $symbol =~ /^\w+$/;
         $export{$symbol}++;
         }
@@ -78,8 +80,8 @@ sub import
                                         ),
                 );
         *{"$caller\::$invocation"} = sub {
-                                            $send_active_events
-                                            and $known_events{$event}
+                                            $can_send->{active_events}
+                                            and $can_send->{event}{$event}
                                             and notify(
                                                     'message'   => shift || '',
                                                     'event'     => $event,
@@ -95,9 +97,9 @@ sub import
                                         $event
                                         ),
                 );
-        *{"$caller\::is_$invocation"}   = sub { return( $send_active_events and $known_events{$event} ); };
+        *{"$caller\::is_$invocation"}   = sub { return( $can_send->{active_events} and $can_send->{event}{$event} ); };
 
-        $known_events{$event} = 1;  # all events are 'on' by default
+        $can_send->{event}{$event} = 1;  # all events are 'on' by default
         }
 
     return;
@@ -212,7 +214,7 @@ sub stop_buffer {
 #  @param   <none>
 #  @return  a list of registered event names
 sub known_events {
-    return( sort( keys( %known_events ) ) );
+    return( sort( keys( %{$can_send->{event}} ) ) );
 }
 
 ## @fn      activate_event( $event )
@@ -222,7 +224,7 @@ sub known_events {
 sub activate_event {
     my $event = shift;
     return unless $event;
-    $known_events{$event} = 1;
+    $can_send->{event}{$event} = 1;
 }
 
 ## @fn      active_events()
@@ -230,7 +232,7 @@ sub activate_event {
 #  @param   <none>
 #  @return  a list active event names
 sub active_events {
-    return( sort ( grep { $known_events{$_} } keys( %known_events ) ) );
+    return( sort ( grep { $can_send->{event}{$_} } keys( %{$can_send->{event}} ) ) );
 }
 
 ## @fn      deactivate_event( $event )
@@ -240,7 +242,7 @@ sub active_events {
 sub deactivate_event {
     my $event = shift;
     return unless $event;
-    $known_events{$event} = 0;
+    $can_send->{event}{$event} = 0;
 }
 
 ## @fn      inactive_events()
@@ -248,21 +250,21 @@ sub deactivate_event {
 #  @param   <none>
 #  @return  a list inactive event names
 sub inactive_events {
-    return( sort( grep { not $known_events{$_} } keys( %known_events ) ) );
+    return( sort( grep { not $can_send->{event}{$_} } keys( %{$can_send->{event}} ) ) );
 }
 
 ## @fn      activate_all_events()
 #  @brief   turn of all event generation. No events will be produced or distributed after calling this method
 #  @return  <none>
 sub activate_all_events {
-    $send_active_events = 0;
+    $can_send->{active_events} = 1;
 }
 
 ## @fn      deactivate_all_events( )
 #  @brief   (re)-activate all events which were active before stop_all_events() was called
 #  @return  <none>
 sub deactivate_all_events {
-    $send_active_events = 1;
+    $can_send->{active_events} = 0;
 }
 
 1;

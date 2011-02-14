@@ -41,6 +41,7 @@ foreach my $test_case ( @test_cases )
                                 );
     ok( eval $eval_code, $description );   ## no critic (ProhibitStringyEval)
     can_ok( $test_package, @{$test_case->{expect}{functions}} );
+    can_ok( $test_package, map { "is_$_" } @{$test_case->{expect}{functions}} );
     }
 
 done_testing();

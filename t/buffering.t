@@ -21,7 +21,7 @@ is( scalar( $logger->notifications() ), 0, 'observer should be initially empty' 
 # do something that creates notifications
 test_package::do_stuff();
 
-is( scalar( $logger->notifications() ), 0, 'observer should still be empty after producing message before the observer has start observing notifications' );
+is( scalar( $logger->notifications() ), 0, 'observer should still be empty before it starts observing notifications' );
 
 # start observing notifications - should be pumped full with the notifications
 # that have been buffered so far
