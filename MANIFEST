@@ -2,5 +2,15 @@ Changes
 Makefile.PL
 MANIFEST
 README
-t/Global-Notifications.t
-lib/Global/Notifications.pm
+lib/Notifications.pm
+lib/Notifications/Observer.pm
+lib/Notifications/Buffer.pm
+lib/Notifications/Notification.pm
+t/export_permutations.t
+t/known_events.t
+t/syslog_functions.t
+t/carp_functions.t
+t/default_functions.t
+t/global_deactivation.t
+t/event_deactivation.t
+t/buffering.t

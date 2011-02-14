@@ -1,4 +1,4 @@
-package Global::Notifications::Observer;
+package Notifications::Observer;
 
 use strict;
 use warnings;
@@ -6,8 +6,8 @@ use warnings;
 use POSIX qw( strftime );
 
 sub new   { return bless {}, shift;                  }
-sub start { Global::Notifications->add_observer(    shift ); }
-sub stop  { Global::Notifications->remove_observer( shift ); }
+sub start { Notifications->add_observer(    shift ); }
+sub stop  { Notifications->remove_observer( shift ); }
 
 sub accept_notification
     {

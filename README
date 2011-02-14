@@ -1,16 +1,34 @@
-Global-Notifications version 0.01
-=================================
+Notifications version 0.01
+==========================
 
-The README is used to introduce the module and provide instructions on
-how to install the module, any machine dependencies it may have (for
-example C compilers and installed libraries) and any other information
-that should be provided before the module is installed.
+Notifications provides a way for individual module authors to provide useful
+information to applications without creating unnecessary dependencies.
 
-A README file is required for CPAN modules since CPAN extracts the
-README file from a module distribution so that people browsing the
-archive can use it get an idea of the modules uses. It is usually a
-good idea to provide version information here so that people can
-decide whether fixes for the module are worth downloading.
+Module authors simply create notifications:
+
+    package MyModule;
+    use Notifications qw( start note finish );
+    start( "I just started" );
+    note( "froobing the doble" );
+    finish( "all done" );
+
+Application authors can pick up these messages by creating typical logging
+objects or specialised notification observers which capture the notifications
+and pass them on to their final destinations:
+
+    #!/usr/bin/perl
+    use Log::Log4Perl;
+    use Log::Dispatch;
+    use Notifications::Observer::Log4Perl;
+    use Notifications::Observer::LogDispatch;
+    use MyModule;
+
+    my $log_d_derl   = Notifications::Observer::Log4Perl->new(    log => Log::Log4Perl->new(    ... ) );
+    my $log_dispatch = Notifications::Observer::LogDispatch->new( log => Log::LogDispatch->new( ... ) );
+    $log_d_derl->start();
+    $Log_dispatch->start();
+
+    ...; # start doing stuff with MyModule
 
 INSTALLATION
 
@@ -23,9 +41,7 @@ To install this module type the following:
 
 DEPENDENCIES
 
-This module requires these other modules and libraries:
-
-  blah blah blah
+none, that's why I wrote this module :-)
 
 COPYRIGHT AND LICENCE
 

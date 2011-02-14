@@ -1,55 +1,16 @@
-use Test::More;
+## @file    export_permutations.t
+#  @brief   test the creation of functions based on all possible permutations
+#           of the input flags, ie: -prefix, -suffix, -upper etc.
+
 use strict;
 use warnings;
+
+use Test::More;
 use YAML;
-BEGIN { use_ok('Global::Notifications') };
+
+BEGIN { use_ok( 'Notifications' ) };
 
 my @test_cases = (
-        { 
-            'test_line'   => __LINE__,
-            'description' => 'functions exported by default',
-            'package'     => 'Default',
-            'use_args'    => undef,
-            'expect'      => {
-                                'functions' => [ qw( debug info warning error ) ],
-                                },
-        },
-        { 
-            'test_line'   => __LINE__,
-            'description' => 'functions exported explicitly by default',
-            'package'     => 'ExplicitDefault',
-            'use_args'    => [qw( :default )],
-            'expect'      => {
-                                'functions' => [ qw( debug info warning error ) ],
-                                },
-        },
-        { 
-            'test_line'   => __LINE__,
-            'description' => 'a simple set of custom event types',
-            'package'     => 'OneTwoThree',
-            'use_args'    => [ qw( one two three ) ],
-            'expect'      => {
-                                'functions' => [ qw( one two three ) ],
-                                },
-        },
-        { 
-            'test_line'   => __LINE__,
-            'description' => 'syslog event set',
-            'package'     => 'Syslog',
-            'use_args'    => [ qw( :syslog ) ],
-            'expect'      => {
-                                'functions' => [ qw( debug info notice warning error critical alert emergency ) ],
-                                },
-        },
-        { 
-            'test_line'   => __LINE__,
-            'description' => 'syslog with additional events',
-            'package'     => 'SyslogSurprise',
-            'use_args'    => [ qw( surprise :syslog progress ) ],
-            'expect'      => {
-                                'functions' => [ qw( debug info notice warning error critical alert emergency surprise progress ) ],
-                                },
-        },
         { 
             'test_line'   => __LINE__,
             'description' => 'add a prefix to event functions - but keep original event names',
@@ -126,37 +87,24 @@ my @test_cases = (
                                 'functions' => [ qw( error info one two three ) ],
                                 },
         },
-    );
 
-# my $logger = logger->new();
-# $logger->start();
+    # TODO: Riehm 2011-02-14 check use of is_ and prefix etc (currently broken)
+    );
 
 {
     foreach my $test_case ( @test_cases )
         {
-        my $description = sprintf( "Line %d: %s", $test_case->{test_line}, $test_case->{description} );
+        my $description  = sprintf( "Line %d: %s", $test_case->{test_line}, $test_case->{description} );
         my $test_package = sprintf( "Test::Notifications::%s", $test_case->{package} );
-        my $eval_code    = sprintf( "package $test_package; use Global::Notifications%s; 1;",
+        my $eval_code    = sprintf( "package $test_package; use Notifications%s; 1;",
                                     $test_case->{use_args}
                                         ? " qw( @{$test_case->{use_args}} )"
                                         : ""
                                     );
-#         diag( $eval_code );
         ok( eval $eval_code, $description );
         can_ok( $test_package, @{$test_case->{expect}{functions}} );
         }
 }
 
-# diag( Dump( $logger ) );
-
 done_testing();
-exit 0;
-
-package logger;
-use parent qw( Global::Notifications::Observer );
-sub new {return bless { notifications => [] }, shift;}
-sub accept_notification
-    {
-    my $self = shift;
-    push @{$self->{notifications}}, shift;
-    }
+exit;
