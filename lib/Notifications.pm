@@ -63,7 +63,7 @@ sub import
     printf "%s buffer\n", $buffer ? "starting global" : "no";
     $buffer->start()    if $buffer;
 
-    no strict 'refs';   ## no critic (Stricture)
+    no strict 'refs';   ## no critic (ProhibitNoStrict)
     foreach my $event ( map { lc } keys %export )
         {
         my $invocation = "$prefix$event$suffix";
@@ -212,7 +212,7 @@ sub stop_buffer {
 #  @param   <none>
 #  @return  a list of registered event names
 sub known_events {
-    return sort keys %known_events;
+    return( sort( keys( %known_events ) ) );
 }
 
 ## @fn      activate_event( $event )
@@ -230,7 +230,7 @@ sub activate_event {
 #  @param   <none>
 #  @return  a list active event names
 sub active_events {
-    return sort grep { $known_events{$_} } keys %known_events;
+    return( sort ( grep { $known_events{$_} } keys( %known_events ) ) );
 }
 
 ## @fn      deactivate_event( $event )
@@ -248,7 +248,7 @@ sub deactivate_event {
 #  @param   <none>
 #  @return  a list inactive event names
 sub inactive_events {
-    return sort grep { not $known_events{$_} } keys %known_events;
+    return( sort( grep { not $known_events{$_} } keys( %known_events ) ) );
 }
 
 ## @fn      activate_all_events()

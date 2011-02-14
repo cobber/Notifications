@@ -39,7 +39,7 @@ foreach my $test_case ( @test_cases )
                                     ? " qw( @{$test_case->{use_args}} )"
                                     : ""
                                 );
-    ok( eval $eval_code, $description );
+    ok( eval $eval_code, $description );   ## no critic (ProhibitStringyEval)
     can_ok( $test_package, @{$test_case->{expect}{functions}} );
     }
 

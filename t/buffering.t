@@ -38,7 +38,7 @@ done_testing();
 exit 0;
 
 # generate some events to be generated BEFORE we create out observer
-package test_package;
+package test_package;   ## no critic (RequireFilenameMatchesPackage, ProhibitMultiplePackages)
 use Notifications qw( -buffer this that the_other );
 
 sub do_stuff
