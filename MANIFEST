@@ -3,12 +3,13 @@ MANIFEST
 Makefile.PL
 README
 lib/Notifications.pm
+lib/Notifications/Adapter/Log4Perl.pm
+lib/Notifications/Adapter/LogDispatch.pm
+lib/Notifications/Adapter/TermProgressBar.pm
 lib/Notifications/Buffer.pm
 lib/Notifications/Notification.pm
 lib/Notifications/Observer.pm
-lib/Notifications/Adapter/LogDispatch.pm
-lib/Notifications/Adapter/Log4Perl.pm
-lib/Notifications/Adapter/TermProgressBar.pm
+lib/Notifications/Progress.pm
 t/buffering.t
 t/carp_functions.t
 t/custom_functions.t
@@ -17,5 +18,9 @@ t/event_deactivation.t
 t/export_permutations.t
 t/global_deactivation.t
 t/known_events.t
+t/lib/Test/Custom.pm
+t/lib/Test/Progressor.pm
+t/lib/Test/Syslogger.pm
 t/notification_objects.t
+t/perl_critic.t
 t/syslog_functions.t
