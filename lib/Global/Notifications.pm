@@ -33,7 +33,7 @@ my %tag       = (
 sub import
     {
     my $class   = shift;
-    my @symbols = @_ ? @_ : ':default';
+    my @symbols = @_ ? @_ : qw( :default );
     my $caller  = caller;
 
     my $case    = '';
@@ -230,7 +230,7 @@ sent to any observers who might be listening.
         <additional data>
         };
 
-=head1 Intentions
+=head1 INTENTIONS
 
 Any module providing notifications should not be required to perform any setup
 other than specifying which events it will produce. As a result, this module
@@ -244,7 +244,7 @@ deliberately displays the following characteristics:
 
 =back
 
-=head1 Applications
+=head1 APPLICATIONS
 
 Global::Notifications can be used to distribute any kind of events within an
 application. Some typical applications of this mechanism include:
@@ -298,9 +298,84 @@ email address (admin alerts for example).
 
 =back
 
-=head1 Examples
+=head1 OPTIONS
 
-=head1 Exports
+The import options specify the names of the events to be generated and the
+functions used to create them. In general, you can select from built-in event
+lists or create your own, and then modify the function names so that they don't
+collide with other functions in your package's namespace.
+
+There are three types of option: tags, modifiers and event names.
+
+Tags begin with a leading ':' and define a list of event names.
+
+Modifiers begin with a leading '-' and specify how the generated function names
+should be modified. Modifiers also apply to functions specified by tags!
+
+Event names are plain words which are also subject to modification by the modifiers.
+
+The options can be specified in any combination and order - the only
+restrictions being that modifiers must be directly followed by their arguments,
+if they need one, and it is not possible to un-select events (i.e.: it is not
+possible to specify :syslog without the 'critical' event.)
+
+=over
+
+=item :default
+
+Currently this is an alias for :typical
+
+=item :typical
+
+Defines the functions: debug, info, warning and error
+
+=item :syslog
+
+Defines the functions: debug, info, notice, warning, error, critical, alert and emergency 
+
+=item -prefix <...>
+
+Adds the prefix to each generated function. The events, however, are not prefixed.
+e.g.:
+
+    use Global::Notifications qw( -prefix my_ one two );
+    my_one( ... );  # produces a 'one' event
+    my_two( ... );  # produces a 'two' event
+
+=item -suffix <...>
+
+Analog to -prefix
+
+=item -upper / -lower
+
+Convert the function names to upper / lower case. Note: the event names are always produced in lowercase!
+
+e.g.:
+
+    use Global::Notifications qw( -prefix my_ one two -upper );
+    MY_ONE( ... );  # produces a 'one' event
+    MY_TWO( ... );  # produces a 'two' event
+
+=item -buffer / -nobuffer
+
+It is possible that some events occur before your application has been able to
+setup a suitable observer. For example, you might want to parse the
+application's configuration files before determining where to write the
+logfile. Normally, any events that happened during this time would be lost.
+By specifying -buffer when you first use Global::Notifications in your
+application, any messages that are generated before the first observer has been
+attached will be buffered and sent to the observer as soon as it has been
+attached.
+
+=item -enabled / -disabled
+
+You may want to disable notifications in production code to improve performance.
+
+=back
+
+=head1 EXAMPLES
+
+=head1 EXPORTS
 
 Global::Notifications only exports the event functions that your module
 specifies. Use prefixes or suffixes to avoid naming conflicts.
@@ -318,7 +393,15 @@ Log::Log4Perl
 
 =head1 AUTHOR
 
-Stephen Riehm, E<lt>japh@opensauce.deE<gt>
+Stephen Riehm, E<lt>sriehm@cpan.orgE<gt>
+
+=head1 THANKS
+
+Robin Clarke for kicking my butt... er... motivating me to post a module on CPAN.
+
+Andreas Hernitscheck for desperately need this module before it even got past alpha.
+
+Ricardo SIGNES for the inspiration provided by Sub::Exporter.
 
 =head1 COPYRIGHT AND LICENSE
 
