@@ -7,17 +7,20 @@ use parent qw( Notifications::Observer );
 
 use YAML;
 
-# syslog -> log4perl level mappings
+# syslog & carp -> log4perl level mappings
 # important: each log4perl level must appear on both the left and right sides
 my $log4perl_level = {
     'trace'     => 'trace', # not in syslog - but very common
     'debug'     => 'debug',
     'info'      => 'info',
+    'confess'   => 'info',
     'notice'    => 'warn',
-    'warning'   => 'warn',
+    'carp'      => 'warn',
     'warn'      => 'warn',
+    'warning'   => 'warn',
     'error'     => 'error',
     'fatal'     => 'fatal', # not in system - but very common
+    'croak'     => 'warn',
     'critical'  => 'fatal',
     'alert'     => 'fatal',
     'emergency' => 'fatal',
@@ -48,6 +51,7 @@ sub accept_notification
     $self->{log}->$level( $notification->message() );
 
     # TODO: Riehm [2011-02-14] log & die, log & warn
+    return;
     }
 
 sub log
@@ -88,11 +92,14 @@ Incomming events are mapped according to the following structure:
     trace     => trace
     debug     => debug
     info      => info
+    confess   => info
     notice    => warn
-    warning   => warn
+    carp      => warn
     warn      => warn
+    warning   => warn
     error     => error
     fatal     => fatal
+    croak     => fatal
     critical  => fatal
     alert     => fatal
     emergency => fatal

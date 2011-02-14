@@ -24,6 +24,7 @@ sub skip
     {
     my $self = shift;
     $self->{is_being_skipped} = 1;
+    return;
     }
 
 sub event               { return shift->{'event'};            }

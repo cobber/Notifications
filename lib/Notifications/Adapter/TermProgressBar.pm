@@ -44,6 +44,8 @@ sub accept_notification
 
     # actually update the progress bar
     $self->{next_step} = $self->{progress_bar}->update( $self->{step} );
+
+    return;
     }
 
 sub progress_bar

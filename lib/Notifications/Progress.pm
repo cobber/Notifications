@@ -110,6 +110,8 @@ sub accept_notification
         }
 
     print join( ' ', @output );
+
+    return;
     }
 
 sub next_bar_step

@@ -7,6 +7,26 @@ use parent qw( Notifications::Observer );
 
 use YAML;
 
+# log4perl & carp -> syslog level mappings
+# important: each log4perl level must appear on both the left and right sides
+my $dispatch_level = {
+    'trace'     => 'debug',
+    'debug'     => 'debug',
+    'info'      => 'info',
+    'confess'   => 'info',
+    'notice'    => 'notice',
+    'carp'      => 'warning',
+    'warn'      => 'warning',
+    'warning'   => 'warning',
+    'error'     => 'error',
+    'croak'     => 'critical',
+    'fatal'     => 'critical',
+    'critical'  => 'critical',
+    'alert'     => 'alert',
+    'emergency' => 'emergency',
+};
+
+
 sub new
     {
     my $class = shift;
@@ -24,15 +44,18 @@ sub accept_notification
     my $self         = shift;
     my $notification = shift;
 
-    my $level = $notification->event();
+    my $level = $dispatch_level->{ $notification->event() } or return;
 
-    # ignore anything which Log::Dispatch would not normally log
-    return if not $self->{log}->level_is_valid( $level ); 
+    # obsolete check - since we're now using the hash above
+#     # ignore anything which Log::Dispatch would not normally log
+#     return if not $self->{log}->level_is_valid( $level );
 
-    $self->{log}->log( 
+    $self->{log}->log(
             level   => $level,
             message => $notification->message(),
             );
+
+    return;
     }
 
 sub log
@@ -75,7 +98,7 @@ Incomming events are mapped according to the following structure:
     info      => info
     notice    => notice
     warning   => warning
-    warn      => warning    
+    warn      => warning
     error     => error
     fatal     => critical   # Log::Dispatch doesn't recognise 'fatal'
     critical  => critical

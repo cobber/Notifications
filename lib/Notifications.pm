@@ -16,10 +16,11 @@ my $can_send    = {
                     event         => {},    # on/off switch for individual events
                     };
 my $tag         = {
-                    'default' => [qw( :typical )],
-                    'typical' => [qw( debug info warning error )],
-                    'syslog'  => [qw( debug info notice warning error critical alert emergency )],
-                    'carp'    => [qw( croak carp confess )],    # TODO: Riehm 2011-02-14 install carp observer automatically?
+                    'default'  => [qw( :typical )],
+                    'typical'  => [qw( debug info warning error )],
+                    'syslog'   => [qw( debug info notice warning error critical alert emergency )],
+                    'log4perl' => [qw( trace debug info warn error fatal )],
+                    'carp'     => [qw( croak carp confess )],    # TODO: Riehm 2011-02-14 install carp observer automatically?
                     # TODO: Riehm 2011-02-14 provide :admin to export add_observer, start/stop_all_events etc.?
                     };
 
@@ -62,7 +63,6 @@ sub import
         }
 
     # start the buffer if one was requested
-    printf "%s buffer\n", $buffer ? "starting global" : "no";
     $buffer->start()    if $buffer;
 
     no strict 'refs';   ## no critic (ProhibitNoStrict)
@@ -204,6 +204,7 @@ sub notify
 sub start_buffer {
     $buffer ||= Notifications::Buffer->new();
     $buffer->start();
+    return;
 }
 
 ## @fn      stop_buffer()
@@ -212,6 +213,7 @@ sub start_buffer {
 #  @return  <none>
 sub stop_buffer {
     $buffer->stop() if $buffer;
+    return;
 }
 
 ## @fn      known_events()
@@ -231,6 +233,7 @@ sub activate_event {
     my $event = shift;
     return unless $event;
     $can_send->{event}{$event} = 1;
+    return;
 }
 
 ## @fn      active_events()
@@ -249,6 +252,7 @@ sub deactivate_event {
     my $event = shift;
     return unless $event;
     $can_send->{event}{$event} = 0;
+    return;
 }
 
 ## @fn      inactive_events()
@@ -264,6 +268,7 @@ sub inactive_events {
 #  @return  <none>
 sub activate_all_events {
     $can_send->{active_events} = 1;
+    return;
 }
 
 ## @fn      deactivate_all_events( )
@@ -271,6 +276,7 @@ sub activate_all_events {
 #  @return  <none>
 sub deactivate_all_events {
     $can_send->{active_events} = 0;
+    return;
 }
 
 1;
