@@ -22,6 +22,10 @@ my @test_cases = (
                                         wubble_error
                                         wubble_info
                                         wubble_warning
+                                        wubble_is_debug
+                                        wubble_is_error
+                                        wubble_is_info
+                                        wubble_is_warning
                                         ) ],
                                 },
         },
@@ -36,6 +40,10 @@ my @test_cases = (
                                         info_wubble
                                         warning_wubble
                                         error_wubble
+                                        is_debug_wubble
+                                        is_info_wubble
+                                        is_warning_wubble
+                                        is_error_wubble
                                         ) ],
                                 },
         },
@@ -45,7 +53,7 @@ my @test_cases = (
             'package'     => 'Upper',
             'use_args'    => [ qw( :default -upper ) ],
             'expect'      => {
-                                'functions' => [ qw( DEBUG INFO WARNING ERROR ) ],
+                                'functions' => [ qw( DEBUG INFO WARNING ERROR IS_DEBUG IS_INFO IS_WARNING IS_ERROR ) ],
                                 },
         },
         { 
@@ -54,7 +62,7 @@ my @test_cases = (
             'package'     => 'Lower',
             'use_args'    => [ qw( ONE Two -lower thRee four ) ],
             'expect'      => {
-                                'functions' => [ qw( one two three four ) ],
+                                'functions' => [ qw( one two three four is_one is_two is_three is_four ) ],
                                 },
         },
         { 
@@ -63,7 +71,7 @@ my @test_cases = (
             'package'     => 'UpperPrefix',
             'use_args'    => [ qw( -prefix foop_ one two three -upper ) ],
             'expect'      => {
-                                'functions' => [ qw( FOOP_ONE FOOP_TWO FOOP_THREE ) ],
+                                'functions' => [ qw( FOOP_ONE FOOP_TWO FOOP_THREE FOOP_IS_ONE FOOP_IS_TWO FOOP_IS_THREE ) ],
                                 },
         },
         { 
@@ -72,7 +80,7 @@ my @test_cases = (
             'package'     => 'UpperSuffix',
             'use_args'    => [ qw( one two three -suffix _FOOP -upper ) ],
             'expect'      => {
-                                'functions' => [ qw( ONE_FOOP TWO_FOOP THREE_FOOP ) ],
+                                'functions' => [ qw( ONE_FOOP TWO_FOOP THREE_FOOP IS_ONE_FOOP IS_TWO_FOOP IS_THREE_FOOP ) ],
                                 },
         },
         { 
@@ -81,14 +89,19 @@ my @test_cases = (
             'package'       => 'PrefixSuffix',
             'use_args'      => [ qw( -suffix _check one two -prefix do_the_ error ) ],
             'expect'        => {
-                                'functions' => [ qw( do_the_one_check do_the_two_check do_the_error_check ) ],
+                                'functions' => [ qw(
+                                        do_the_one_check
+                                        do_the_two_check
+                                        do_the_error_check
+                                        do_the_is_one_check
+                                        do_the_is_two_check
+                                        do_the_is_error_check
+                                        ) ],
                                 },
             'do_not_expect' => {
-                                'functions' => [ qw( error info one two three ) ],
+                                'functions' => [ qw( error info one two three is_error is_info is_one is_two is_three ) ],
                                 },
         },
-
-    # TODO: Riehm 2011-02-14 check use of is_ and prefix etc (currently broken)
     );
 
 {
@@ -103,7 +116,6 @@ my @test_cases = (
                                     );
         ok( eval $eval_code, $description );   ## no critic (ProhibitStringyEval)
         can_ok( $test_package, @{$test_case->{expect}{functions}} );
-        can_ok( $test_package, map { "is_$_" } @{$test_case->{expect}{functions}} );
         }
 }
 

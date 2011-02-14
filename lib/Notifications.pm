@@ -68,18 +68,19 @@ sub import
     no strict 'refs';   ## no critic (ProhibitNoStrict)
     foreach my $event ( map { lc } keys %export )
         {
-        my $invocation = "$prefix$event$suffix";
-        $invocation = uc( $invocation ) if $case eq 'upper';
-        $invocation = lc( $invocation ) if $case eq 'lower';
+        # create the notify function for this event
+        my $notify_function = "${prefix}${event}${suffix}";
+        $notify_function = uc( $notify_function ) if $case eq 'upper';
+        $notify_function = lc( $notify_function ) if $case eq 'lower';
         notify(
                 'event'   => 'setup',
                 'message' => sprintf( "%s exporting %s::%s for event '%s'",
                                         ( (caller(0))[3] =~ /(.*)::/ ),
-                                        $caller, $invocation,
+                                        $caller, $notify_function,
                                         $event
                                         ),
                 );
-        *{"$caller\::$invocation"} = sub {
+        *{"$caller\::$notify_function"} = sub {
                                             $can_send->{active_events}
                                             and $can_send->{event}{$event}
                                             and notify(
@@ -89,15 +90,20 @@ sub import
                                                     'user_data' => { @_ },
                                                     );
                                             };
+
+        # create a is_... function
+        my $check_function = "${prefix}is_${event}${suffix}";
+        $check_function = uc( $check_function ) if $case eq 'upper';
+        $check_function = lc( $check_function ) if $case eq 'lower';
         notify(
                 'event'   => 'setup',
-                'message' => sprintf( "%s exporting %s::is_%s for event '%s'",
+                'message' => sprintf( "%s exporting %s::%s for event '%s'",
                                         ( (caller(0))[3] =~ /(.*)::/ ),
-                                        $caller, $invocation,
+                                        $caller, $check_function,
                                         $event
                                         ),
                 );
-        *{"$caller\::is_$invocation"}   = sub { return( $can_send->{active_events} and $can_send->{event}{$event} ); };
+        *{"$caller\::$check_function"}   = sub { return( $can_send->{active_events} and $can_send->{event}{$event} ); };
 
         $can_send->{event}{$event} = 1;  # all events are 'on' by default
         }
