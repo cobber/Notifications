@@ -8,7 +8,9 @@ use Test::More;
 
 BEGIN { use_ok( 'Notifications', qw( :syslog ) ) };
 
-# TODO: Riehm 2011-02-14 expect syslog functions
+my @syslog_events = qw( debug info warning error alert critical emergency );
+can_ok( 'main', @syslog_events );
+can_ok( 'main', map { "is_$_"} @syslog_events );
 
 done_testing();
 exit;

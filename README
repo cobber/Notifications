@@ -26,7 +26,7 @@ and pass them on to their final destinations:
     my $log_d_derl   = Notifications::Observer::Log4Perl->new(    log => Log::Log4Perl->new(    ... ) );
     my $log_dispatch = Notifications::Observer::LogDispatch->new( log => Log::LogDispatch->new( ... ) );
     $log_d_derl->start();
-    $Log_dispatch->start();
+    $log_dispatch->start();
 
     ...; # start doing stuff with MyModule
 

@@ -2,6 +2,7 @@ Changes
 MANIFEST
 Makefile.PL
 README
+TODO
 lib/Notifications.pm
 lib/Notifications/Adapter/Log4Perl.pm
 lib/Notifications/Adapter/LogDispatch.pm

@@ -1,0 +1,11 @@
+2011-02-15: fix the built-in progress bars
+2011-02-15: write tests for the built-in progress bars
+2011-02-15: write tests for the Log4Perl adapter
+2011-02-15: write tests for the LogDispatch adapter
+2011-02-15: write tests for the Term::ProgressBars adapter
+2011-02-15: actually write a Carp adapter which is able to confess, carp and croak properly
+2011-02-15: add more comprehensive error handling
+2011-02-15: prevent duplicate buffer-dumping if an observer is added twice
+2011-02-15: prevent endless loop if a tag group becomes cyclicly self referential
+2011-02-14: allow the user to supply event mappings to adapters
+2011-02-14: provide :admin to export add_observer, start/stop_all_events etc.?
