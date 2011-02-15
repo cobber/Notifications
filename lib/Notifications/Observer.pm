@@ -25,3 +25,5 @@ sub accept_notification
     }
 
 1;
+
+# TODO: Riehm [2011-02-15] write some documentation for this thing!

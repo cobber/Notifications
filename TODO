@@ -1,3 +1,8 @@
+2011-02-15: write documentation for Notifications::Notification
+2011-02-15: write documentation for Notifications::Observer
+2011-02-15: write documentation for Notifications::Buffer
+2011-02-15: write documentation for Notifications::Progress
+2011-02-15: write some sample scripts that actually do something interesting
 2011-02-15: fix the built-in progress bars
 2011-02-15: write tests for the built-in progress bars
 2011-02-15: write tests for the Log4Perl adapter

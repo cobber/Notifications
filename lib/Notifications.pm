@@ -415,16 +415,18 @@ have been exported to the Do::What::I::Mean package.
 Each function accepts a scalar message, optionally followed by a hash of
 additional data which might be of use to a suitable recipient.
 
-When sending a notification, a hash with the following structure is created and
-sent to any observers who might be listening.
+When sending a notification, a Notifications::Notification object is created
+with the following structure and sent to any observers who might be listening.
 
     $a_notification = {
         event     => '<eventname>',
         message   => '...',
         timestamp => ...,
         caller    => [ ... ],
-        <additional data>
+        user_data => { <additional data> },
         };
+
+See Notifications::Notification for more details.
 
 =head1 INTENTIONS
 
