@@ -12,6 +12,9 @@ sub new
 
     $self->{notifications} = [];
 
+    # start recording notifications immediately
+    $self->start();
+
     return $self;
     }
 
@@ -19,20 +22,32 @@ sub accept_notification
     {
     my $self         = shift;
     my $notification = shift;
+
     push @{$self->{notifications}}, $notification;
+
+    return;
     }
 
 sub notifications
     {
     my $self = shift;
+
     return @{$self->{notifications}};
     }
 
+## @fn      stop()
+#  @brief   stop buffering and remove any captured notifications
+#  @param   <none>
+#  @return  <none>
 sub stop
     {
     my $self = shift;
+
     $self->SUPER::stop();
+
     $self->{notifications} = [];
+
+    return;
     }
 
 1;

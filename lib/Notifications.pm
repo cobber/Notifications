@@ -7,15 +7,39 @@ use warnings;
 use Notifications::Notification;
 use Carp qw( croak carp );
 
+BEGIN
+    {
+    if( eval "require Time::HiRes" )
+        {
+        Time::HiRes->import( 'gettimeofday' );
+        }
+    else
+        {
+        # need () here to emulate gettimeofday exported by Time::HiRes
+        sub gettimeofday () { return ( time(), 0 ); }
+        }
+    }
+
 our $VERSION = '0.01';
 
-my @observers   = ();        # ordered list of object references
-my $buffer      = undef;     # special observer for catching unobserved notifications - off by default
-my $can_send    = {
+my $sharedProxy = {
+    filters  => [],                 # stack of filters
+    handlers => [],                 # stack of receivers
+    buffer   => undef,              # temporary buffer during initialisation
+    can_send => {                   # quick check flags
+        all_active_events => 1,
+        event_of_type     => {},
+    },
+    event_map => {},                # used for mapping event types
+};
+
+my @observers = ();        # ordered list of object references
+my $buffer    = undef;     # special observer for catching unobserved notifications - off by default
+my $can_send  = {
                     active_events => 1,     # global on/off switch
                     event         => {},    # on/off switch for individual events
                     };
-my $tag         = {
+my $tag       = {
                     'default'  => [qw( :typical )],
                     'typical'  => [qw( debug info warning error )],
                     'syslog'   => [qw( debug info notice warning error critical alert emergency )],
@@ -45,71 +69,113 @@ sub import
     my @symbols = @_ ? @_ : qw( :default );
     my $caller  = caller;
 
-    my $case    = '';
-    my $prefix  = '';
-    my $suffix  = '';
-    my %export  = ();
+    my $set_case_to      = '';
+    my $prefix           = '';
+    my $suffix           = '';
+    my %events_to_export = ();
     while( my $symbol = shift @symbols )
         {
-        $prefix   = shift @symbols                              if $symbol =~ /^[-_]prefix/i;
-        $suffix   = shift @symbols                              if $symbol =~ /^[-_]suffix/i;
-        $case     = lc( $1 )                                    if $symbol =~ /^[-_](upper|lower)(case)?$/i;
-        $buffer   = undef                                       if $symbol =~ /^[-_]no[-_]?buffer$/i;
-        $buffer ||= Notifications::Buffer->new()                if $symbol =~ /^[-_]buffer$/i;
-        $can_send->{active_events} = lc( $1 ) eq 'en' ? 1 : 0   if $symbol =~ /^[-_](en|dis)abled$/i;
-        push( @symbols, @{$tag->{lc($1)}} )                     if $symbol =~ /^:(\w+)$/;
+        $caller         = shift @symbols                              if $symbol =~ /^-export_to_package/i;
+        $prefix         = shift @symbols                              if $symbol =~ /^-prefix/i;
+        $suffix         = shift @symbols                              if $symbol =~ /^-suffix/i;
+        $set_case_to    = lc( $1 )                                    if $symbol =~ /^-(upper|lower)(case)?$/i;
+        $buffer         = undef                                       if $symbol =~ /^-no[-_]?buffer$/i;
+        $buffer       ||= Notifications::Buffer->new()                if $symbol =~ /^-buffer$/i;
+        $can_send->{active_events} = lc( $1 ) eq 'en' ? 1 : 0         if $symbol =~ /^-(en|dis)abled$/i;
+        push( @symbols, @{$tag->{lc($1)}} )                           if $symbol =~ /^:(\w+)$/;
         next unless $symbol =~ /^\w+$/;
-        $export{$symbol}++;
+        $events_to_export{$symbol}++;
         }
 
-    # start the buffer if one was requested
-    $buffer->start()    if $buffer;
-
-    no strict 'refs';   ## no critic (ProhibitNoStrict)
-    foreach my $event ( map { lc } keys %export )
+    foreach my $event ( map { lc } keys %events_to_export )
         {
-        # create the notify function for this event
-        my $notify_function = "${prefix}${event}${suffix}";
-        $notify_function = uc( $notify_function ) if $case eq 'upper';
-        $notify_function = lc( $notify_function ) if $case eq 'lower';
-        notify(
-                'event'   => 'setup',
-                'message' => sprintf( "%s exporting %s::%s for event '%s'",
-                                        ( (caller(0))[3] =~ /(.*)::/ ),
-                                        $caller, $notify_function,
-                                        $event
-                                        ),
-                );
-        *{"$caller\::$notify_function"} = sub {
-                                            $can_send->{active_events}
-                                            and $can_send->{event}{$event}
-                                            and notify(
-                                                    'message'   => shift || '',
-                                                    'event'     => $event,
-                                                    'caller'    => [ (caller(0))[0..2], (caller(1))[3] || 'main' ],
-                                                    'user_data' => { @_ },
-                                                    );
-                                            };
-
-        # create a is_... function
-        my $check_function = "${prefix}is_${event}${suffix}";
-        $check_function = uc( $check_function ) if $case eq 'upper';
-        $check_function = lc( $check_function ) if $case eq 'lower';
-        notify(
-                'event'   => 'setup',
-                'message' => sprintf( "%s exporting %s::%s for event '%s'",
-                                        ( (caller(0))[3] =~ /(.*)::/ ),
-                                        $caller, $check_function,
-                                        $event
-                                        ),
-                );
-        *{"$caller\::$check_function"}   = sub { return( $can_send->{active_events} and $can_send->{event}{$event} ); };
-
-        $can_send->{event}{$event} = 1;  # all events are 'on' by default
+        export_notification_function(
+            event             => $event,
+            export_to_package => $caller,
+            prefix            => $prefix,
+            suffix            => $suffix,
+            set_case_to       => $set_case_to,
+            );
         }
 
     return;
     }
+
+## @fn      export_notification_function( %param )
+#  @brief   create a notification sender in the calling package
+#  @param   {event}             the name of the notification event to be created
+#  @param   {export_to_package} the name of the package to get the new function
+#  @param   {prefix}            functoin name prefix
+#  @param   {suffix}            functoin name prefix
+#  @param   {set_case_to}   convert to a specific upper/lower case?
+#  @return  <none>
+sub export_notification_function {
+    my %param = @_;
+
+    # work out what the name of the functions for this event should be
+    my %name_parts;
+    @name_parts{qw( is prefix event suffix )} =
+        map { $param{set_case_to} eq 'upper' ? uc( $_ ) : $_ }
+        map { $param{set_case_to} eq 'lower' ? lc( $_ ) : $_ }
+        ( 'is_', @param{qw( prefix event suffix )} );
+
+    my $notify_function = sprintf( "%s::%s",
+        $param{export_to_package},
+        join( '', @name_parts{qw(    prefix event suffix )} ),
+        );
+
+    my $check_function  = sprintf( "%s::%s",
+        $param{export_to_package},
+        join( '', @name_parts{qw( is prefix event suffix )} ),
+        );
+
+    # create the new functions
+    notify(
+        event   => 'debug',
+        message => sprintf( "%s exporting %s for event '%s'",
+            ( (caller(1))[3] =~ /(.*)::/ ),
+            $notify_function,
+            $param{event}
+        ),
+    );
+
+    notify(
+        event   => 'debug',
+        message => sprintf( "%s exporting %s for event '%s'",
+            ( (caller(1))[3] =~ /(.*)::/ ),
+            $check_function,
+            $param{event}
+        ),
+    );
+
+    {
+        no strict 'refs';   ## no critic (ProhibitNoStrict)
+
+        # create a function to actually send a new event
+        *{$notify_function} = sub {
+            $can_send->{active_events}
+            and $can_send->{event}{ $param{event} }
+            and notify(
+                message   => shift || '',
+                event     => $param{event},
+                # caller is called from the context of an anymous sub away from the real caller
+                caller    => [ (caller(0))[0..2], (caller(1))[3] || 'main' ],
+                user_data => { @_ },
+            );
+        };
+
+        # create a function to return 1 or 0 if the event would be propagated to observers
+        *{$check_function} = sub {
+            return( $can_send->{active_events} and $can_send->{event}{ $param{event} } );
+        };
+    }
+
+    $can_send->{event}{ $param{event} } = 1;  # all events are 'on' by default
+
+    return
+}
+
+
 
 ## @fn      add_observer( $observer )
 #  @brief   add an observer to the list of observers
@@ -154,7 +220,12 @@ sub add_observer
 sub remove_observer
     {
     my $class        = shift;
-    my $old_observer = shift || croak sprintf "%s: please supply a reference to an observer", (caller(0))[3];
+    my $old_observer = shift;
+
+    unless( $old_observer )
+        {
+        croak sprintf "%s: please supply a reference to an observer", (caller(0))[3];
+        }
 
     @observers = grep { $_ ne $old_observer } @observers;
 
@@ -182,7 +253,7 @@ sub notify
         'message'   => $param{message},
         'event'     => $param{event},
         'caller'    => [ (caller(0))[0..3] ],
-        'timestamp' => $param{timestamp} || time(),
+        'timestamp' => $param{timestamp} || [ gettimeofday() ],
         'user_data' => $param{user_data} || {},
         );
 
@@ -203,7 +274,7 @@ sub notify
 #  @return  <none>
 sub start_buffer {
     $buffer ||= Notifications::Buffer->new();
-    $buffer->start();
+
     return;
 }
 
@@ -213,6 +284,7 @@ sub start_buffer {
 #  @return  <none>
 sub stop_buffer {
     $buffer->stop() if $buffer;
+
     return;
 }
 
@@ -231,8 +303,11 @@ sub known_events {
 #  @return  <none>
 sub activate_event {
     my $event = shift;
+
     return unless $event;
+
     $can_send->{event}{$event} = 1;
+
     return;
 }
 
@@ -241,7 +316,11 @@ sub activate_event {
 #  @param   <none>
 #  @return  a list active event names
 sub active_events {
-    return( sort ( grep { $can_send->{event}{$_} } keys( %{$can_send->{event}} ) ) );
+    return(
+        sort
+        grep { $can_send->{event}{$_} }
+        keys( %{$can_send->{event}} )
+    );
 }
 
 ## @fn      deactivate_event( $event )
@@ -250,8 +329,11 @@ sub active_events {
 #  @return  <none>
 sub deactivate_event {
     my $event = shift;
+
     return unless $event;
+
     $can_send->{event}{$event} = 0;
+
     return;
 }
 
@@ -260,14 +342,20 @@ sub deactivate_event {
 #  @param   <none>
 #  @return  a list inactive event names
 sub inactive_events {
-    return( sort( grep { not $can_send->{event}{$_} } keys( %{$can_send->{event}} ) ) );
+    return(
+        sort
+        grep { not $can_send->{event}{$_} }
+        keys( %{$can_send->{event}} )
+    );
 }
 
 ## @fn      activate_all_events()
 #  @brief   turn of all event generation. No events will be produced or distributed after calling this method
 #  @return  <none>
 sub activate_all_events {
+
     $can_send->{active_events} = 1;
+
     return;
 }
 
@@ -275,9 +363,16 @@ sub activate_all_events {
 #  @brief   (re)-activate all events which were active before stop_all_events() was called
 #  @return  <none>
 sub deactivate_all_events {
+
     $can_send->{active_events} = 0;
+
     return;
 }
+
+unless( caller )
+    {
+    printf "time of day is: %d.%s\n", gettimeofday();
+    }
 
 1;
 __END__
@@ -287,21 +382,117 @@ Notifications - provide customised functions for distributing notification messa
 
 =head1 SYNOPSIS
 
-  use Notifications qw( <configuration> );
+=head2 For Module Authors...
+
+    package Whizz::Bang;
+
+    use Notifications qw( debug info surprise clear_cache );
+
+    info( "Hi there" );
+
+    is_debug()
+        and debug( "Code quality check", criticisms => [ Perl::Critic->new()->critique( __FILE__ ) ] );
+
+    clear_cache( 'need fresh sprockets', class => qr/\bsprocket\b/i );
+
+    surprise( "Did you know", pigs => 'can fly' );
+
+=head2 For Application Authors...
+
+    use Notifications (
+            '-buffer',
+            '-map' => {
+                detail   => 'debug',
+                critical => 'error',
+                fatal    => 'error',
+                surprise => 'error',
+                },
+            );
+
+    if( is_debug() )
+        {
+        Notifications::report_unmapped_types();
+        }
+
+    Notifications::Adapter::Log4Perl->new(); # create and start a log4perl logger
+
+=head2 For Notification Handler Authors...
+
+    package Notification::SurpriseHandler;
+
+    sub new
+        {
+        my $self = bless {}, shift;
+
+        Notifications::add_handler( $self );
+
+        return $self;
+        }
+
+    sub filter_notification
+        {
+        my $self         = shift;
+        my $notification = shift;
+        return notfication_should_live( $notification ) ? 1 : 0;
+        }
+
+    sub accept_notification
+        {
+        my $self         = shift;
+        my $notification = shift;
+
+        print YAML::Dump( $notification );
+
+        return;
+        }
 
 =head1 DESCRIPTION
 
 The intention of this module is to provide a light-weight notification center
-to be used as a proxy for printf, Log::Dispatch, Log::Log4Perl etc.
-In many ways this is the same as Log::Any, however, it can be used for any kind
-of notification, not just logging!
+to allow module authors to provide useful feedback from their modules.
+In many cases it might be a simple alternative to Log::Any - but notificatons
+are not restricted in any way and can be used for much more than just simple
+logging! See the Examples section below.
 
-Notifications allows you to specify what your module will report,
-without binding it to a specific technique.
+=head2 Basic Design Patterns
 
-Later, the program using your module specifies which events to
-use and how they should be handled, by providing one or more notification
-observers which then handle the event message appropriately.
+=over
+
+=item Minimal Dependencies
+
+This module is pure-perl and requires no non-core modules to install.
+
+=item Ease-Of-Use
+
+The interfaces provided by this module are intentionally simplistic but flexible.
+Module authors need no setup beyond the 'use Notifications' declaration,
+handlers need only implement the accept_notification() method and
+applications need only create one handler. Use of this module should have a
+minimal impact on the way you write your programs!
+
+=item Singleton
+
+There is only one notification handler - modules do not need to worry about
+which handler to use for what reason - they just send notifications.
+
+=item Proxy
+
+The Notifications module is a proxy for any other kind of notification or event
+handling system. Notifications are simply passed on to the hanlders.
+
+=item Observers
+
+By default, notifications don't actually do anything. The perl script (as
+opposed to the individual modules) must create one or more notification
+handlers to catch notification events and do something useful with them.
+
+=item Chain of Command
+
+Event handlers are stored in a stack and each notification event is passed to
+each handler in order. This makes it possible to filter, modify or capture
+notifications much like exceptions, without changing the flow of logic.
+
+=back
 
 =head2 Sending Notifications
 
@@ -314,7 +505,7 @@ produce those messages.
 
 For example:
 
-    package Do::What::I:Mean;
+    package Do::What::I::Mean;
 
     use Notifications qw( error warning surprise );
 
@@ -335,10 +526,11 @@ application author needs to specify which notifications to use and how each
 type should be processed.
 
 Notifications provides a few adapters for typical cases, but to give you a
-better idea of what's happening, we'll do it the long and hard way here:
+better idea of what's happening, we'll do it the long way here for
+demonstration purposes:
 
     package MyMessageCatcher;
-    use parent qw( Notifications::Observer );
+    use parent qw( Notifications::Handler );
 
     sub accept_notification
         {
@@ -361,7 +553,7 @@ That's it! Now we just need a script that uses this information...
 =head2 Putting it all together
 
 So we've got some modules that produce notifications, we've got a custom
-observer, now we just need to plug it all together and make it work.
+handler, now we just need to plug it all together and make it work.
 
 Here's a simple script to do just that:
 
@@ -416,7 +608,7 @@ Each function accepts a scalar message, optionally followed by a hash of
 additional data which might be of use to a suitable recipient.
 
 When sending a notification, a Notifications::Notification object is created
-with the following structure and sent to any observers who might be listening.
+with the following structure and sent to any handlers who might be listening.
 
     $a_notification = {
         event     => '<eventname>',
@@ -455,7 +647,7 @@ The :syslog tag can be used to automatically define functions for the events:
 emergency, alert, critical, error, warning, notice, info and debug.
 
 Sending these notifications, however, will not cause them to be sent to the
-system's syslog logfile. That's the responsibility of an observer which accepts
+system's syslog logfile. That's the responsibility of a handler which accepts
 the events mentioned above.
 
 =item Configuration changes
@@ -471,26 +663,26 @@ complex interaction setups.
 
 =item "Soft"-exceptions
 
-Notification observers are processed in reverse chronological order, ie: the
-last observer to be added is the first one to be processed. Also, if an
-observer dies while processing a notification, that notification will not be
-passed on to any further observers.
+Notification handlers are processed in reverse chronological order, ie: the
+last handler to be added is the first one to be processed. Also, if a
+handler dies while processing a notification, that notification will not be
+passed on to any further handlers.
 
-These features allow you to create observers to capture notifications that
+These features allow you to create handlers to capture notifications that
 occur within a restricted scope for later analysis (e.g.: summarising the
 warnings encountered during a complicated process).
 
-If these notification-catching observers also throw an exception or die, then
-the routine which created the observer can decide later if the process was
+If these notification-catching handlers also throw an exception or die, then
+the routine which created the handler can decide later if the process was
 successfull 'enough' to continue or not. In this way, Notifications
 works like a stack and can capture detailed error information without aborting
 the current process (as an exception would).
 
-Just don't forget to remove the observer before leaving the function!
+Just don't forget to remove the handler before leaving the function!
 
 =item Network Growls
 
-Observers can, of course, also choose to send selected notifications to remote
+Handlers can, of course, also choose to send selected notifications to remote
 servers, such as a desktop alert system (such as Growl) or even your pager or
 email address (admin alerts for example).
 
@@ -557,12 +749,12 @@ e.g.:
 =item -buffer / -nobuffer
 
 It is possible that some events occur before your application has been able to
-setup a suitable observer. For example, you might want to parse the
+setup a suitable handler. For example, you might want to parse the
 application's configuration files before determining where to write the
 logfile. Normally, any events that happened during this time would be lost.
 By specifying -buffer when you first use Notifications in your
-application, any messages that are generated before the first observer has been
-attached will be buffered and sent to the observer as soon as it has been
+application, any messages that are generated before the first handler has been
+attached will be buffered and sent to the handler as soon as it has been
 attached.
 
 =item -enabled / -disabled
