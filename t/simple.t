@@ -46,7 +46,7 @@ $observer->stop();
 
 use Benchmark;
 
-timethese( 10_000,
+timethese( 100_000,
         {
         message_only => sub { wanna_hello( "blah" ); },
         message_data => sub { wanna_hello( "blah", foo => 'blah' ); },
