@@ -54,7 +54,7 @@ timethese( 100_000,
         );
 
 printf "simple Stats:\n%s...\n", Dump( $count );
-printf "logger stats:\n%s...\n", Dump( $logger->stats() );
+printf "logger stats:\n%s...\n", Dump( $logger );
 
 # hello( "world" );
 # fred( message => "world" );
@@ -118,6 +118,7 @@ sub log
     return     if $self->{is_paused};
     my $note = shift;
     $self->{stats}{$note->name()}++;
+    push @{$self->{errors}}, $note   if $note->name() eq 'error';
     return;
     }
 
