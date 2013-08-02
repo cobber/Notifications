@@ -9,6 +9,7 @@ use lib "$RealBin/../lib";
 use Notifications qw( -prefix wanna_ hello fred :syslog exception error hello foo SCREAM );
 use Notifications::Observer;
 use YAML;
+use Scalar::Util qw( refaddr );
 
 my $observer = Notifications::Observer->new();
 $observer->observe_with(
@@ -18,6 +19,12 @@ $observer->observe_with(
                 ''    => sub { count( shift, 'something' ); },
                 );
 $observer->start();
+
+# too lazy to stick around
+Notifications::Observer->new()->start();
+
+my $errors = Notifications::Observer->new()->start();
+$errors->observe_with( error => sub { count( shift, 'wawawawaaaaaa' ) } );
 
 my $is_paused = 0;
 my $count = {};
@@ -42,6 +49,7 @@ wanna_warning( 'blah' );
 wanna_error( 'blah' );
 wanna_scream( 'dammit' );
 
+printf "killing %s\n", refaddr( $observer );
 $observer->stop();
 
 use Benchmark;
