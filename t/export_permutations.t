@@ -6,12 +6,11 @@ use strict;
 use warnings;
 
 use Test::More;
-use YAML;
 
 BEGIN { use_ok( 'Notifications' ) };
 
 my @test_cases = (
-        { 
+        {
             'test_line'   => __LINE__,
             'description' => 'add a prefix to event functions - but keep original event names',
             'package'     => 'Prefix',
@@ -29,7 +28,7 @@ my @test_cases = (
                                         ) ],
                                 },
         },
-        { 
+        {
             'test_line'   => __LINE__,
             'description' => 'add a suffix to event functions - but keep original event names',
             'package'     => 'Suffix',
@@ -47,7 +46,7 @@ my @test_cases = (
                                         ) ],
                                 },
         },
-        { 
+        {
             'test_line'   => __LINE__,
             'description' => 'upper case function names - event names are always lower case',
             'package'     => 'Upper',
@@ -56,7 +55,7 @@ my @test_cases = (
                                 'functions' => [ qw( DEBUG INFO WARNING ERROR IS_DEBUG IS_INFO IS_WARNING IS_ERROR ) ],
                                 },
         },
-        { 
+        {
             'test_line'   => __LINE__,
             'description' => 'lower case function names',
             'package'     => 'Lower',
@@ -65,7 +64,7 @@ my @test_cases = (
                                 'functions' => [ qw( one two three four is_one is_two is_three is_four ) ],
                                 },
         },
-        { 
+        {
             'test_line'   => __LINE__,
             'description' => 'upper case and with prefix',
             'package'     => 'UpperPrefix',
@@ -74,7 +73,7 @@ my @test_cases = (
                                 'functions' => [ qw( FOOP_ONE FOOP_TWO FOOP_THREE FOOP_IS_ONE FOOP_IS_TWO FOOP_IS_THREE ) ],
                                 },
         },
-        { 
+        {
             'test_line'   => __LINE__,
             'description' => 'upper case with suffix',
             'package'     => 'UpperSuffix',
@@ -83,7 +82,7 @@ my @test_cases = (
                                 'functions' => [ qw( ONE_FOOP TWO_FOOP THREE_FOOP IS_ONE_FOOP IS_TWO_FOOP IS_THREE_FOOP ) ],
                                 },
         },
-        { 
+        {
             'test_line'     => __LINE__,
             'description'   => 'prefix and suffix',
             'package'       => 'PrefixSuffix',

@@ -7,9 +7,11 @@ information to applications without creating unnecessary dependencies.
 Module authors simply create notifications:
 
     package MyModule;
+
     use Notifications qw( start note finish );
+
     start( "I just started" );
-    note( "froobing the doble" );
+    note( "froobing the doble", doble => $doble_object );
     finish( "all done" );
 
 Application authors can pick up these messages by creating typical logging
@@ -17,16 +19,13 @@ objects or specialised notification observers which capture the notifications
 and pass them on to their final destinations:
 
     #!/usr/bin/perl
+
     use Log::Log4Perl;
-    use Log::Dispatch;
     use Notifications::Observer::Log4Perl;
-    use Notifications::Observer::LogDispatch;
     use MyModule;
 
-    my $log_d_derl   = Notifications::Observer::Log4Perl->new(    log => Log::Log4Perl->new(    ... ) );
-    my $log_dispatch = Notifications::Observer::LogDispatch->new( log => Log::LogDispatch->new( ... ) );
+    my $log_d_derl = Notifications::Observer::Log4Perl->new( logger => Log::Log4Perl->new( ... ) );
     $log_d_derl->start();
-    $log_dispatch->start();
 
     ...; # start doing stuff with MyModule
 

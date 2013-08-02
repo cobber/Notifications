@@ -5,7 +5,6 @@ use strict;
 use warnings;
 
 use Test::More;
-use YAML;
 
 BEGIN { use_ok('Notifications') };
 
@@ -43,6 +42,8 @@ foreach my $test_case ( @test_cases )
     can_ok( $test_package, @{$test_case->{expect}{functions}} );
     can_ok( $test_package, map { "is_$_" } @{$test_case->{expect}{functions}} );
     }
+
+# printf "exported functions:\n    %s\n", join( "\n    ", Notifications::exported_functions() );
 
 done_testing();
 exit;
