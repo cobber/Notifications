@@ -29,9 +29,11 @@ sub DESTROY
 
 sub set_callbacks
     {
-    my $self = shift;
+    my $self  = shift;
     my %param = @_;
+
     @{$self->{callback}}{ keys %param } = values %param;
+
     return;
     }
 

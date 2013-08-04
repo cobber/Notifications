@@ -21,6 +21,12 @@ $observer->set_callbacks(
                 ''    => sub { count( shift, 'something' ); },
                 );
 
+# too lazy to stick around
+Notifications::Observer->new();
+
+my $errors = Notifications::Observer->new();
+$errors->set_callbacks( error => sub { count( shift, 'wawawawaaaaaa' ) } );
+
 my $is_paused = 0;
 my $count = {};
 sub count
