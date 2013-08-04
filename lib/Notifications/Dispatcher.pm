@@ -4,7 +4,6 @@ use strict;
 use warnings;
 
 use Scalar::Util qw( refaddr );
-use YAML;
 
 my $global_dispatcher;
 
@@ -12,16 +11,22 @@ BEGIN {
     $global_dispatcher = bless {}, __PACKAGE__;
 }
 
+sub new               { return $global_dispatcher; }
+sub global_dispatcher { return $global_dispatcher; }
+
+sub DESTROY { printf "killing dispatcher\n"; }
+
 sub prepare_queue
     {
+    my $self = shift;
     my $name = shift;
-    if( not exists $global_dispatcher->{queue}{$name} )
+    if( not exists $self->{queue}{$name} )
         {
-        $global_dispatcher->{queue}{$name} = [];
-        foreach my $observer ( values %{$global_dispatcher->{observers}} )
+        $self->{queue}{$name} = [];
+        foreach my $observer ( values %{$self->{observers}} )
             {
             my $catcher = $observer->observer_for( $name )  or next;
-            push @{$global_dispatcher->{queue}{$name}}, [ $catcher, $observer ];
+            push @{$self->{queue}{$name}}, [ $catcher, $observer ];
             }
         }
     return;
@@ -29,51 +34,53 @@ sub prepare_queue
 
 sub add_observer
     {
+    my $self     = shift;
     my $observer = shift;
-    $global_dispatcher->{observers}{ refaddr( $observer ) } = $observer;
-    foreach my $name ( keys %{$global_dispatcher->{queue}} )
+    if( not $observer )
+        {
+        printf "GAH\n";
+        my $i = 0;
+        while( my @stack = (caller($i++))[0..2] )
+            {
+            printf "%s line %s\n", $stack[1], $stack[2];
+            }
+        }
+    $self->{observers}{ refaddr( $observer ) } = $observer;
+    foreach my $name ( keys %{$self->{queue}} )
         {
         my $catcher = $observer->observer_for( $name ) or next;
-        push @{$global_dispatcher->{queue}{$name}}, [ $catcher, $observer ];
+        push @{$self->{queue}{$name}}, [ $catcher, $observer ];
         }
     return;
     }
 
 sub remove_observer
     {
+    my $self     = shift;
     my $observer = shift;
+
     my $observer_ref = refaddr( $observer );
-    foreach my $queue ( values %{$global_dispatcher->{queue}} )
+    foreach my $queue ( values %{$self->{queue}} )
         {
-        @{$queue} = grep { not $_->[1] == $observer_ref } @{$queue};
+        @{$queue} = grep { defined( $_->[1] ) and not $_->[1] == $observer_ref } @{$queue};
         }
-    delete $global_dispatcher->{observers}{ refaddr( $observer ) };
+    delete $self->{observers}{ refaddr( $observer ) };
     return;
     }
 
 sub send
     {
+    my $self = shift;
     my $note = shift;
     my $name = $note->name();
 
-    prepare_queue( $name )  if not $global_dispatcher->{queue}{$name};
+    $self->prepare_queue( $name )  if not $self->{queue}{$name};
 
-    foreach my $observer ( @{$global_dispatcher->{queue}{$name}} )
+    foreach my $observer ( @{$self->{queue}{$name}} )
         {
         $observer->[0]->( $note );
         }
-#     my $stack = [ $notification->stack() ];
-#     printf "dispatching:\n%s...\n", Dump( $notification,
-#             {
-#             name      => $notification->name()      // undef,
-#             message   => $notification->message()   // undef,
-#             timestamp => $notification->timestamp() // undef,
-#             origin    => [ $notification->origin()  ],
-#             data      => { $notification->data()    },
-#             package   => $notification->package()   // undef,
-#             stack     => [ $notification->stack() ],
-#             },
-#             );
+
     return;
     }
 

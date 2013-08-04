@@ -40,7 +40,6 @@ foreach my $test_case ( @test_cases )
                                 );
     ok( eval $eval_code, $description );   ## no critic (ProhibitStringyEval)
     can_ok( $test_package, @{$test_case->{expect}{functions}} );
-    can_ok( $test_package, map { "is_$_" } @{$test_case->{expect}{functions}} );
     }
 
 # printf "exported functions:\n    %s\n", join( "\n    ", Notifications::exported_functions() );

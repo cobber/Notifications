@@ -5,9 +5,27 @@ use warnings;
 
 use Notifications::Dispatcher;
 
-sub new   { return bless { catchers => {} }, shift; }
-sub start { Notifications::Dispatcher::add_observer( shift ); }
-sub stop  { Notifications::Dispatcher::remove_observer( shift ); }
+sub new
+    {
+    my $class = shift;
+    my $param = { @_ };
+    my $self = bless {}, $class;
+
+    $self->{dispatcher} = delete( $param->{dispatcher} ) // Notifications::Dispatcher->global_dispatcher();
+    $self->{catchers}   = $param;
+
+    $self->{dispatcher}->add_observer( $self );
+
+    return $self;
+    }
+
+sub DESTROY
+    {
+    my $self = shift;
+    printf "killing observer\n";
+    $self->{dispatcher}->remove_observer( $self )   if $self->{dispatcher};
+    return;
+    }
 
 sub observe_with
     {

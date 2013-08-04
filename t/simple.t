@@ -6,6 +6,9 @@ use warnings;
 use FindBin qw( $RealBin );
 use lib "$RealBin/../lib";
 
+use Test::More;
+pass( "hello" );
+
 use Notifications qw( -prefix wanna_ hello fred :syslog exception error hello foo SCREAM );
 use Notifications::Observer;
 use YAML;
@@ -17,7 +20,6 @@ $observer->observe_with(
                 foo   => sub { count( shift, 'foo'       ); },
                 ''    => sub { count( shift, 'something' ); },
                 );
-$observer->start();
 
 my $is_paused = 0;
 my $count = {};
@@ -30,7 +32,7 @@ sub count
     return;
     }
 
-my $logger = logger->new()->start();
+my $logger = logger->new();
 
 wanna_hello( 'blah' );
 wanna_error( 'blah' );
@@ -41,8 +43,6 @@ wanna_exception( 'blah' );
 wanna_warning( 'blah' );
 wanna_error( 'blah' );
 wanna_scream( 'dammit' );
-
-$observer->stop();
 
 use Benchmark;
 
@@ -55,6 +55,9 @@ timethese( 100_000,
 
 printf "simple Stats:\n%s...\n", Dump( $count );
 printf "logger stats:\n%s...\n", Dump( $logger );
+
+done_testing();
+exit;
 
 # hello( "world" );
 # fred( message => "world" );
@@ -91,30 +94,28 @@ printf "logger stats:\n%s...\n", Dump( $logger );
 package logger;
 
 use Notifications::Observer;
+use Class::Null;
 
 sub new
     {
     my $class = shift;
     my $self = bless {}, $class;
-    $self->{is_on}     = 0;
     $self->{is_paused} = 0;
-    $self->{observer}  = Notifications::Observer->new();
-    $self->{observer}->observe_with( '' => sub { $self->log( shift ); } );
-    $self->{observer}->start();
+    $self->{observer}  = Notifications::Observer->new(
+#                                                         dispatcher => Class::Null->new(),
+                                                        '' => sub { $self->log( shift ); },
+                                                    );
     $self->{stats}     = {};
     return $self;
     }
 
-sub start  { my $self = shift; $self->{is_on} = 1; return $self; }
-sub stop   { my $self = shift; $self->{is_on} = 0; return $self; }
-sub pause  { my $self = shift; $self->start(); $self->{is_paused} = 1; return $self; }
-sub resume { my $self = shift; $self->start(); $self->{is_paused} = 0; return $self; }
+sub pause  { my $self = shift; $self->{is_paused} = 1; return $self; }
+sub resume { my $self = shift; $self->{is_paused} = 0; return $self; }
 sub stats  { my $self = shift; return $self->{stats}; }
 
 sub log
     {
     my $self = shift;
-    return unless $self->{is_on};
     return     if $self->{is_paused};
     my $note = shift;
     $self->{stats}{$note->name()}++;

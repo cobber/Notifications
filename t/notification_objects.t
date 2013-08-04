@@ -4,30 +4,33 @@
 use strict;
 use warnings;
 
+use Time::HiRes qw( gettimeofday );
 use Test::More;
+use Test::Differences;
 
-BEGIN { use_ok( 'Notifications::Notification' ) };
+BEGIN { use_ok( 'Notifications::Message' ) };
 
-my $now = time();
-my $test_notification = Notifications::Notification->new(
-    'event'     => 'test',
-    'message'   => 'so what',
-    'timestamp' => $now,
-    'caller'    => [ 'test_package', 'test_file', 42, 'main' ], # all dummy data
-    'user_data' => {
-                    'shopping' => [ qw( eggs milk cookies ) ],
-                    },
+my $now  = [ gettimeofday() ];
+my $data = {
+            'shopping' => [ qw( eggs milk cookies ) ],
+            };
+my $test_notification = Notifications::Message->new(
+    name      => 'test',
+    message   => 'so what',
+    timestamp => $now,
+    origin    => [ 'test_package', 'test_file', 42, 'main' ], # all dummy data
+    data      => $data,
     );
 
-isa_ok( $test_notification,  'Notifications::Notification', 'class check'            );
-is( $test_notification->event(),                    'test', 'event check'            );
-is( $test_notification->message(),               'so what', 'message check'          );
-is( ($test_notification->caller())[0],      'test_package', 'caller package'         );
-is( ($test_notification->caller())[1],         'test_file', 'caller file'            );
-is( ($test_notification->caller())[2],                  42, 'caller line'            );
-is( ($test_notification->caller())[3],              'main', 'caller function'        );
-is( $test_notification->timestamp(),                  $now, 'timestamp'              );
-is( $test_notification->is_being_skipped(),              0, 'do not skip by default' );
+isa_ok( $test_notification,          'Notifications::Message', 'class check'     );
+is( $test_notification->name(),                        'test', 'name check'      );
+is( $test_notification->message(),                  'so what', 'message check'   );
+is( $test_notification->package(),             'test_package', 'caller package'  );
+is( $test_notification->file(),                   'test_file', 'caller file'     );
+is( $test_notification->line(),                            42, 'caller line'     );
+is( $test_notification->function(),                    'main', 'caller function' );
+eq_or_diff( $test_notification->timestamp(),             $now, 'timestamp'       );
+eq_or_diff( $test_notification->data(),                 $data, 'data'            );
 
 done_testing();
 exit;
