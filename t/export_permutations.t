@@ -14,7 +14,7 @@ my @test_cases = (
             'test_line'   => __LINE__,
             'description' => 'add a prefix to event functions - but keep original event names',
             'package'     => 'Prefix',
-            'use_args'    => [ qw( :default -prefix wubble_ ) ],
+            'use_args'    => [ qw( -prefix wubble_ debug info warning error ) ],
             'expect'      => {
                                 'functions' => [ qw(
                                         wubble_debug
@@ -28,7 +28,7 @@ my @test_cases = (
             'test_line'   => __LINE__,
             'description' => 'add a suffix to event functions - but keep original event names',
             'package'     => 'Suffix',
-            'use_args'    => [ qw( -suffix _wubble :default ) ],
+            'use_args'    => [ qw( -suffix _wubble debug info warning error ) ],
             'expect'      => {
                                 'functions' => [ qw(
                                         debug_wubble

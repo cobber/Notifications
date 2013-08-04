@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Notifications qw( -note_class app::note );
+use Notifications qw( -message_class app::note );
 use logger;
 use cli;
 

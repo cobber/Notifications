@@ -9,12 +9,12 @@ use lib "$RealBin/../lib";
 use Test::More;
 pass( "hello" );
 
-use Notifications qw( -prefix wanna_ hello fred :syslog exception error hello foo SCREAM );
+use Notifications qw( -prefix wanna_ hello fred exception warning debug error hello foo SCREAM );
 use Notifications::Observer;
 use YAML;
 
 my $observer = Notifications::Observer->new();
-$observer->observe_with(
+$observer->set_callbacks(
                 error => sub { count( shift, 'error'     ); },
                 fred  => sub { count( shift, 'fred'      ); },
                 foo   => sub { count( shift, 'foo'       ); },
@@ -44,52 +44,37 @@ wanna_warning( 'blah' );
 wanna_error( 'blah' );
 wanna_scream( 'dammit' );
 
+# remove unwanted observers
+$observer->set_callbacks(           '' => undef, debug => undef );
+$logger->{observer}->set_callbacks( '' => undef, debug => undef );
+
 use Benchmark;
 
 timethese( 100_000,
         {
-        message_only => sub { wanna_hello( "blah" ); },
-        message_data => sub { wanna_hello( "blah", foo => 'blah' ); },
+        message_only      => sub { wanna_warning( "warning" ); },
+        message_data      => sub { wanna_warning( "warning", foo => 'blah' ); },
+        }
+        );
+
+# no observers - real quick!
+timethese( 1_000_000,
+        {
+        message_only_void => sub { wanna_debug(   "debug" ); },
+        message_data_void => sub { wanna_debug(   "debug", foo => 'blah' ); },
         },
         );
+
+# see if this kills the observer - should only have a weak ref in dispatcher
+$observer = undef;
+
+wanna_scream( "one more time" );
 
 printf "simple Stats:\n%s...\n", Dump( $count );
 printf "logger stats:\n%s...\n", Dump( $logger );
 
 done_testing();
 exit;
-
-# hello( "world" );
-# fred( message => "world" );
-# exception( "thing", name => 'blah' );
-# error( message => "world", name => 'blah' );
-# blah();
-# bling->doing();
-# 
-# sub blah
-#     {
-#     fred( said => 'foo' );
-#     }
-# 
-# exit 0;
-# 
-# package bling;
-# 
-# use Notifications qw( hello fred );
-# 
-# use Try::Tiny;
-# 
-# sub doing
-#     {
-#     try {
-#         hello( "why?" );
-#         fred( 'cus!' );
-#         }
-#     catch
-#         {
-#         hello( "dang" );
-#         };
-#     }
 
 package logger;
 
@@ -103,7 +88,8 @@ sub new
     $self->{is_paused} = 0;
     $self->{observer}  = Notifications::Observer->new(
 #                                                         dispatcher => Class::Null->new(),
-                                                        '' => sub { $self->log( shift ); },
+                                                        ''      => sub { $self->log( shift ); },    # will be removed for performance tests
+                                                        'debug' => sub { $self->log( shift ); },
                                                     );
     $self->{stats}     = {};
     return $self;

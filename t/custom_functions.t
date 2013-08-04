@@ -19,24 +19,6 @@ my @test_cases = (
                                 'functions' => [ qw( one two three ) ],
                                 },
         },
-        { 
-            'test_line'   => __LINE__,
-            'description' => 'syslog with additional events',
-            'package'     => 'SyslogSurprise',
-            'use_args'    => [ qw( surprise :syslog progress ) ],
-            'expect'      => {
-                                'functions' => [ qw( debug info notice warning error critical alert emergency surprise progress ) ],
-                                },
-        },
-        { 
-            'test_line'   => __LINE__,
-            'description' => 'merge custom events with pre-defined events',
-            'package'     => 'SyslogMerge',
-            'use_args'    => [ qw( info :syslog alert ) ],
-            'expect'      => {
-                                'functions' => [ qw( debug info notice warning error critical alert emergency ) ],
-                                },
-        },
     );
 
 {

@@ -12,7 +12,7 @@ sub new
     my $self = bless {}, $class;
 
     $self->{dispatcher} = delete( $param->{dispatcher} ) // Notifications::Dispatcher->global_dispatcher();
-    $self->{catchers}   = $param;
+    $self->{callback}   = $param;
 
     $self->{dispatcher}->add_observer( $self );
 
@@ -27,19 +27,19 @@ sub DESTROY
     return;
     }
 
-sub observe_with
+sub set_callbacks
     {
     my $self = shift;
     my %param = @_;
-    @{$self->{catchers}}{ keys %param } = values %param;
+    @{$self->{callback}}{ keys %param } = values %param;
     return;
     }
 
-sub observer_for
+sub callback_for
     {
     my $self = shift;
     my $name = shift;
-    return ( $self->{catchers}{$name} or $self->{catchers}{''} );
+    return ( $self->{callback}{$name} or $self->{callback}{''} );
     }
 
 1;
