@@ -8,9 +8,6 @@ our $VERSION = '0.02';
 # core modules only!
 use Carp qw( croak );
 
-# TODO: Riehm 2013-08-02 REMOVE ME after testing
-use YAML;
-
 use Notifications::Dispatcher;
 use Notifications::Message;
 
@@ -137,6 +134,7 @@ sub export_notification_function {
             {
             printf "creating new sender for $name...\n";
             $senders->{$name} //= sub {
+                                        return if not $dispatcher->has_observers_for( $name );
                                         my $message =   @_ % 2 ? shift : undef;
                                         my $param   =   { @_ };
                                         $message    //= delete $param->{message};

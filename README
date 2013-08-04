@@ -1,35 +1,100 @@
-Notifications version 0.01
-==========================
+NOTIFICATIONS
+=============
 
-Notifications provides a way for individual module authors to provide useful
-information to applications without creating unnecessary dependencies.
+The Notifications module is a general purpose system for sending and receiving
+messages within an application.
 
-Module authors simply create notifications:
+This kind of message handling is typically known as the "Observer" or "Publisher /
+Subscriber" pattern and is often used for:
+
+    - logging
+    - triggering actions without prior knowledge
+    - event sequencing
+    - progress monitoring
+    - etc.
+
+WHY NOT Log::Any, Log::Log4Perl, Log::Dispatch etc.?
+----------------------------------------------------
+
+The Log::* modules all handle logging, but they ONLY handle logging.
+Notifications are a more generic concept, there are no levels and no
+restrictions to the kinds of messages which can be sent.
+
+The intention of Notifications is that they can be used by any module without
+being bound to a specific purpose.
+
+Using Notifications in modules:
+-------------------------------
+
+Any module which uses the Notifications module automatically gets a set of
+functions defined in its namespace for sending notification objects.
+
+For example:
 
     package MyModule;
 
-    use Notifications qw( start note finish );
+    use Notifications ( -prefix => 'send_', qw( clear_cache note progress start finish ) );
 
-    start( "I just started" );
-    note( "froobing the doble", doble => $doble_object );
-    finish( "all done" );
+    sub do_stuff {
+        send_progress( "doing stuff", step => 0, of => 4 );
+        send_start( "I just started" );
+        send_progress( step => 1, of => 4 );
+        send_clear_cache();
+        send_progress( step => 2, of => 4 );
+        send_note( "making a new widget", widget => $widget );
+        send_progress( step => 3, of => 4 );
+        send_finish( "all done" );
+        send_progress( step => 4, of => 4 );
+    }
 
-Application authors can pick up these messages by creating typical logging
-objects or specialised notification observers which capture the notifications
-and pass them on to their final destinations:
+    1;
+
+In this example, functions for sending messages with the name 'clear_cache',
+'note', 'start' & 'finish' are created in the module's namespace with a 'send_' prefix.
+Thus, the send_start() function sends a 'start' message, send_note() sends
+a 'note' message etc.
+
+The example above shows all of the different ways that the notification sending
+functions can be used:
+
+    1.  without any parameters
+    2.  with a message text
+    3.  with a set of key/value pairs
+    4.  with a message text and additional key/value pairs
+
+In each case, a Notifications::Message object is created and sent to all
+registered listeners (see below) for further processing.
+
+Receiving Notifications:
+------------------------
+
+Any module can receive these messages by creating a Notifications::Observer
+object and specifying which messages are of interest and how they are to
+be processed.
 
     #!/usr/bin/perl
 
-    use Log::Log4Perl;
-    use Notifications::Observer::Log4Perl;
+    use Notifications::Observer;
     use MyModule;
 
-    my $log_d_derl = Notifications::Observer::Log4Perl->new( logger => Log::Log4Perl->new( ... ) );
-    $log_d_derl->start();
+    open( my $logfile_fh, '>', 'logfile.out' )    or die;
+    my $logger = Notifications::Observer->new( 'debug' => \&write_log );
 
-    ...; # start doing stuff with MyModule
+    sub write_log
+        {
+        my $message = shift;
+        printf $logfile_fh "%s: %s\n", uc( $message->name() ), $message->text();
+        }
+
+    # start doing stuff with MyModule ...
+
+In this example, only the debug messages will be logged, all other
+notificiations will be completely ignored by the system.
+
+See the Notifications documentation for more details.
 
 INSTALLATION
+============
 
 To install this module type the following:
 
@@ -41,6 +106,8 @@ To install this module type the following:
 DEPENDENCIES
 
 none, that's why I wrote this module :-)
+
+Actually, Notifications does use Carp, Time::HiRes and Scalar::Util - but all of these have been in perl's core-modules list since v5.7.3
 
 COPYRIGHT AND LICENCE
 

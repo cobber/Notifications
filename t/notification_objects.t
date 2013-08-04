@@ -16,7 +16,7 @@ my $data = {
             };
 my $test_notification = Notifications::Message->new(
     name      => 'test',
-    message   => 'so what',
+    text      => 'so what',
     timestamp => $now,
     origin    => [ 'test_package', 'test_file', 42, 'main' ], # all dummy data
     data      => $data,
@@ -24,7 +24,7 @@ my $test_notification = Notifications::Message->new(
 
 isa_ok( $test_notification,          'Notifications::Message', 'class check'     );
 is( $test_notification->name(),                        'test', 'name check'      );
-is( $test_notification->message(),                  'so what', 'message check'   );
+is( $test_notification->text(),                     'so what', 'text check'      );
 is( $test_notification->package(),             'test_package', 'caller package'  );
 is( $test_notification->file(),                   'test_file', 'caller file'     );
 is( $test_notification->line(),                            42, 'caller line'     );

@@ -54,17 +54,26 @@ sub add_observer
     return;
     }
 
+sub has_observers_for
+    {
+    my $self = shift;
+    my $name = shift;
+    return $self->{queue}{$name} ? 1 : 0;
+    }
+
 sub remove_observer
     {
     my $self     = shift;
     my $observer = shift;
 
     my $observer_ref = refaddr( $observer );
-    foreach my $queue ( values %{$self->{queue}} )
+    foreach my $name ( keys %{$self->{queue}} )
         {
+        my $queue = $self->{queue}{$name};
         @{$queue} = grep { defined( $_->[1] ) and not $_->[1] == $observer_ref } @{$queue};
+        delete $self->{queue}{$name}    if not @{$queue};
         }
-    delete $self->{observers}{ refaddr( $observer ) };
+    delete $self->{observers}{$observer_ref};
     return;
     }
 
