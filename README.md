@@ -7,15 +7,15 @@ messages within an application.
 This kind of message handling is typically known as the *Observer* or
 *Publisher / Subscriber* pattern and is well suited for:
 
-- logging
-- triggering actions without prior knowledge
-- event sequencing
-- progress monitoring
-- output handling
-- etc.
+    - logging
+    - triggering actions without prior knowledge
+    - event sequencing
+    - progress monitoring
+    - output handling
+    - etc.
 
-WHY NOT Log::Any, Log::Log4Perl, Log::Dispatch etc.?
-----------------------------------------------------
+WHY *NOT* Log::Any, Log::Log4Perl, Log::Dispatch etc.?
+------------------------------------------------------
 
 The Log::* modules all handle logging, but they ONLY handle logging.
 Notifications are a more generic concept, there are no levels and no
@@ -26,8 +26,8 @@ purpose. The ability to carry additional data also makes it possible for objects
 to refer to themselves (providing callbacks) or structured, additional
 information which can be used directly by the receiver.
 
-Using Notifications in modules:
--------------------------------
+Using Notifications in modules
+------------------------------
 
 Any module which uses the Notifications module automatically gets a set of
 functions defined in its namespace for sending notification objects.
@@ -58,24 +58,24 @@ For example:
 ```
 
 In this example, functions for sending messages with the name *clear_cache*,
-*note*, *start* & *finish* are created in the module*s namespace with a
-*send_* prefix.
+*note*, *start* & *finish* are created in the module*s namespace with an
+optional *send_* prefix.
 Thus, the `send_start()` function sends a *start* message, `send_note()` sends
 a *note* message and so on.
 
 The example above shows all of the different ways that the notification sending
 functions can be used:
 
-1.  without any parameters
-2.  with a message text
-3.  with a set of key/value pairs
-4.  with a message text and additional key/value pairs
+    1.  without any parameters
+    2.  with a message text
+    3.  with a set of key/value pairs
+    4.  with a message text and additional key/value pairs
 
 In each case, a **Notifications::Message** object is created and sent to all
-registered listeners (see below) for further processing.
+registered observers (see below) for further processing.
 
-Receiving Notifications:
-------------------------
+Receiving Notifications
+-----------------------
 
 Any module can receive these messages by creating a **Notifications::Observer**
 object and specifying which messages are of interest and how they are to
@@ -119,8 +119,8 @@ Dependencies
 
 None, that's why I wrote this module :-)
 
-Actually, Notifications does use `Carp`, `Time::HiRes` and `Scalar::Util`
-- but all of these have been in perl's core-modules list since v5.7.3
+Actually, Notifications does use `Carp`, `Time::HiRes` and `Scalar::Util`,
+however, all of these have been in perl's core-modules list since v5.7.3
 
 COPYRIGHT AND LICENCE
 =====================
