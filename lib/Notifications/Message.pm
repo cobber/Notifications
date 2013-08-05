@@ -8,15 +8,15 @@ use Time::HiRes qw( gettimeofday );
 sub new
     {
     my $class = shift;
-    my %param = @_;
+    my $param = { @_ };
 
     my $self = bless {}, $class;
 
-    $self->{name}      = $param{name};
-    $self->{text}      = $param{text}      || '';
-    $self->{data}      = $param{data}      || {};
-    $self->{origin}    = $param{origin};
-    $self->{timestamp} = $param{timestamp} || [ gettimeofday() ];
+    $self->{name}      = $param->{name};
+    $self->{text}      = $param->{text}      || '';
+    $self->{data}      = $param->{data}      || {};
+    $self->{origin}    = $param->{origin};
+    $self->{timestamp} = $param->{timestamp} || [ gettimeofday() ];
 
     return $self;
     }
@@ -32,6 +32,7 @@ sub function  { my $self = shift; return $self->{origin}[3]; }
 sub stack
     {
     my $self = shift;
+
     my @stack = ();
     my $i = 1;
     while( my @caller = (caller($i++))[0..2] )
@@ -42,6 +43,7 @@ sub stack
             push @stack, \@caller;
             }
         }
+
     return @stack;
     }
 

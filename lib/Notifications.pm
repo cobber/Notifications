@@ -12,7 +12,7 @@ use Notifications::Dispatcher;
 
 our $dispatcher    = Notifications::Dispatcher->new();
 our $message_class = 'Notifications::Message';
-our $senders       = {};    # <name> => <code-ref>
+our $senders       = {};    # <message-name> => <code-ref>
 
 ## @fn      import( @param )
 #  @brief   set up subs for sending notifications
@@ -92,8 +92,8 @@ sub import
 #  @brief   create a notification sender in the calling package
 #  @param   {name}              the name of the notification event to be created
 #  @param   {export_to_package} the name of the package to get the new function
-#  @param   {prefix}            functoin name prefix
-#  @param   {suffix}            functoin name prefix
+#  @param   {prefix}            function name prefix
+#  @param   {suffix}            function name prefix
 #  @return  <none>
 sub export_notification_function {
     my $param = { @_ };

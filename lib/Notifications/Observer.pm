@@ -9,8 +9,8 @@ sub new
     {
     my $class = shift;
     my $param = { @_ };
-    my $self = bless {}, $class;
 
+    my $self = bless {}, $class;
     $self->{dispatcher} = delete( $param->{dispatcher} ) // Notifications::Dispatcher->global_dispatcher();
     $self->{callback}   = $param;
 
@@ -22,8 +22,10 @@ sub new
 sub DESTROY
     {
     my $self = shift;
+
     printf "killing observer\n";
     $self->{dispatcher}->remove_observer( $self )   if $self->{dispatcher};
+
     return;
     }
 
@@ -41,6 +43,7 @@ sub callback_for
     {
     my $self = shift;
     my $name = shift;
+
     return ( $self->{callback}{$name} or $self->{callback}{''} );
     }
 

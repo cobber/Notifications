@@ -16,8 +16,6 @@ BEGIN
 sub new               { return $global_dispatcher; }
 sub global_dispatcher { return $global_dispatcher; }
 
-sub DESTROY { printf "killing dispatcher\n"; }
-
 sub queue
     {
     my $self = shift;
@@ -30,9 +28,6 @@ sub queue
         foreach my $observer ( values %{$self->{observers}} )
             {
             $self->enqueue( $name, $observer );
-            my $callback     = $observer->callback_for( $name )  or next;
-            my $observer_ref = refaddr( $observer );
-            $self->{queue}{$name}{$observer_ref} = $callback;
             }
         }
 
@@ -59,7 +54,7 @@ sub enqueue
         $self->dequeue( $name, $observer_ref );
         }
 
-#     printf "enqued: %s => %-7s %s\n", $observer_ref, "'$name'", join( ", ", map { sprintf( "[ %s => %s ]", $_, $queue->{$_} ) } sort keys %{$queue} );
+#     printf "enqueued: %s => %-7s %s\n", $observer_ref, "'$name'", join( ", ", map { sprintf( "[ %s => %s ]", $_, $queue->{$_} ) } sort keys %{$queue} );
 
     return;
     }
