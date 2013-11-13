@@ -58,14 +58,14 @@ sub log
 
     printf "writing %s to logfile\n", $note->name();
     printf $file_handle "%-12s(%s) %s\n", uc $note->name() . ':', $note->package(), $note->text();
+    my $indent = ' ' x 12;
     if( my $sender = $note->sender() )
         {
         my $sender_name = $sender->can( 'name' ) ? $sender->name() : refaddr( $sender );
-        printf $file_handle "sent from: %s (%s)\n", ref( $note->sender() ), $sender_name;
+        printf $file_handle "%ssent from: %s (%s)\n", $indent, ref( $note->sender() ), $sender_name;
         }
     if( $note->can( 'data_as_string' ) and my $data = $note->data_as_string() )
         {
-        my $indent = ' ' x 12;
         printf $file_handle "%s\n", $data =~ s/^/$indent/mgr;
         }
 
