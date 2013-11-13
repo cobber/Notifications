@@ -1,6 +1,18 @@
 package cli;
 
+use strict;
+use warnings;
+
 use app::notifications;
+
+use app::thing;
+
+sub new
+    {
+    my $class = shift;
+    my $self = bless {}, $class;
+    return $self;
+    }
 
 sub run
     {
@@ -12,6 +24,13 @@ sub run
     $self->run_command();
     debug( "finished my app" );
     step( step => 3, of => 3 );
+
+    my @things = map { app::thing->new( name => $_ ) } qw( frank brian );
+    $things[0]->banter();
+    $things[1]->exclaim();
+    $things[1]->banter();
+    $things[0]->exclaim();
+
     app_will_terminate();
     return;
     }

@@ -10,4 +10,6 @@ use cli;
 # create a log file and catch all notifications
 my $logger = logger->new();
 
-exit( cli->run( @ARGV ) || 0 );
+my $cli = cli->new();
+
+exit( $cli->run( @ARGV ) || 0 );
