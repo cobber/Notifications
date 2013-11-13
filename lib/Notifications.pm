@@ -108,11 +108,13 @@ sub export_notification_function {
     # only create one sender for each type of notification
     $senders->{$name} //= sub {
                                 return if not $dispatcher->has_observers_for( $name );      # short-cut if there are no observers for this name - speed x 10!
-                                my $text       = @_ % 2 ? shift : undef;
+                                my $sender     = ref($_[0]) ? shift : undef;
+                                my $text       = @_ % 2     ? shift : undef;
                                 my $send_param = { @_ };
                                 $text //= delete $send_param->{text};
                                 $dispatcher->send(
                                     $message_class->new(
+                                        sender  => $sender,                                 # the object which created this notification
                                         name    => $name,                                   # closure variable
                                         text    => $text,                                   # from caller
                                         data    => $send_param,                             # from caller

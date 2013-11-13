@@ -16,6 +16,7 @@ sub new
     $self->{text}      = $param->{text}      || '';
     $self->{data}      = $param->{data}      || {};
     $self->{origin}    = $param->{origin};
+    $self->{sender}    = $param->{sender};
     $self->{timestamp} = $param->{timestamp} || [ gettimeofday() ];
 
     return $self;
@@ -26,6 +27,7 @@ sub text      { my $self = shift; return $self->{text};      }
 sub data      { my $self = shift; return $self->{data};      }
 sub timestamp { my $self = shift; return $self->{timestamp}; }
 sub package   { my $self = shift; return $self->{origin}[0]; }
+sub sender    { my $self = shift; return $self->{sender};    }
 sub file      { my $self = shift; return $self->{origin}[1]; }
 sub line      { my $self = shift; return $self->{origin}[2]; }
 sub function  { my $self = shift; return $self->{origin}[3]; }
